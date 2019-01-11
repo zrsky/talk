@@ -17,11 +17,32 @@
 
     <style>
         .avatar {
-            width: 100px;
+            width: 120px;
+        }
+
+        .mAvatar {
+            width: 50px;
         }
 
         .box {
             margin-top: 50px;
+        }
+
+        .username {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .date {
+            color: #999;
+        }
+
+        .content-wrapper {
+            /* margin-left: 50px; */
+            margin-top: 20px;
+        }
+        .messageRow {
+            margin-top: 20px;
         }
     </style>
 
@@ -36,61 +57,112 @@
     <% include header.ejs %>
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div class="jumbotron">
+        <% if(login) { %>
         <div class="container">
-            <% if(login) { %>
-            <div class="box">
-                <img class="col-sm-3 col-lg-3 col-xs-3 avatar" src="<%= avatar %>" alt="">
-                <h1 class="col-sm-5 col-lg-5 col-xs-5">
+            <div class="row box">
+                <div class="col-lg-2 col-sm-2">
+                    <img class="avatar" src="<%= avatar %>" alt="">
+                </div>
+                <div class="col-lg-3 col-sm-3">
+                    <p class="username">
+                        <%= username %>
+                    </p>
+                    <textarea name="message" id="message" cols="60" rows="3"></textarea>
+                    <button type="button" id="post" class="btn btn-primary">发表说说</button>
+                    <div class="alert alert-warning" style="display: none;" id="errAlert" role="alert"></div>
+                </div>
+                <!-- <h1 class="username">
                     <%= username %>
+                </h1> -->
+
+            </div>
+
+            <!-- <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more &raquo;</a></p> -->
+        </div>
+        <% }else{ %>
+        <div class="container">
+            <div class="box">
+                <h1>
+                    欢迎！
                 </h1>
             </div>
-            <% } %>
-            <p>This is a template for a simple marketing or informational website. It includes a large callout called a
-                jumbotron and three supporting pieces of content. Use it as a starting point to create something more
-                unique.</p>
-            <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more &raquo;</a></p>
+
+            <p>班级说说使我们交流的园地，欢迎注册！</p>
+            <p><a class="btn btn-primary btn-lg" href="/register" role="button">注册</a></p>
         </div>
+        <% } %>
+
     </div>
+        <div class="container">
+            <div class="row" id="messageRow">
 
-    <div class="container">
-        <!-- Example row of columns -->
-        <div class="row">
-            <div class="col-md-4">
-                <h2>Heading</h2>
-                <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-                    mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-                    mollis euismod. Donec sed odio dui. </p>
-                <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
             </div>
-            <div class="col-md-4">
-                <h2>Heading</h2>
-                <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor
-                    mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna
-                    mollis euismod. Donec sed odio dui. </p>
-                <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-            </div>
-            <div class="col-md-4">
-                <h2>Heading</h2>
-                <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id
-                    ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris
-                    condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-                <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-            </div>
-        </div>
-
-        <hr>
-
-        <footer>
-            <p>&copy; 2016 Company, Inc.</p>
-        </footer>
-    </div> <!-- /container -->
-
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
+        </div> <!-- /container -->
+    
     <script src="/js/jquery-1.11.3.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/underscore-noflect.js"></script>
+    <script type="text/template" id="model">
+                <div class="col-md-4  messageRow">
+                    <div class="row">
+                        <img src="{{= avatar }}" class="mAvatar" alt="">
+                        <p style="display: inline-block;">
+                            {{= username }}
+                        </p>
+                        <div class="content-wrapper">
+                            <p>
+                                {{= content }}
+                            </p>
+                            <p class="date">
+                                {{= datetime }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+    </script>
+    <script>
+        //得到模板函数
+        var compiled = _.template($("#model").html());
+
+        $.get('/getAllMessage', {}, function (result) {
+            result.data.forEach((item, i) => {
+                //组装模板
+                var htmlstring = compiled(item);
+                //添加DOM
+                $("#messageRow").append($(htmlstring));
+            });
+        })
+
+        $('#post').on('click', function () {
+            $.post('/dopost', {
+                message: $('#message').val()
+            }, function (result) {
+                if (result == -3) {
+                    $('#errAlert').fadeIn();
+                    $('#errAlert').html('服务器错误');
+                    return;
+                }
+                var str =
+                    `<div class="col-md-4 messageRow">
+                                <div class="row">
+                                    <img src="${result.avatar}" class="mAvatar" alt="">
+                                     <p style="display: inline-block;">
+                                        ${result.username}
+                                    </p>
+                                    <div class="content-wrapper">
+                                        <p>
+                                            ${result.content}
+                                        </p>
+                                        <p class="date">
+                                            ${result.datetime}
+                                        </p>
+                                    </div
+                                </div>
+                            </div>`;
+                $('#messageRow').append(str);
+            })
+        })
+    </script>
 </body>
 
 </html>

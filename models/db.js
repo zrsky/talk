@@ -33,23 +33,25 @@ exports.insertOne = function (collectionName, json, callback) {
 exports.find = function(collectionName, json, C, D) {
     let result = [];
     let length = arguments.length;
-    let callback, args, limitNumber, skipNumber;
+    let callback, args, limitNumber, skipNumber, sort;
     if(length === 3) {
         callback = C;
         limitNumber = 0;
         skipNumber = 0;
+        sort = {};
     }else if(length === 4) {
         args = C;
         callback = D;
         limitNumber = args.pageSize;
         skipNumber = args.pageSize * (args.pageNo - 1);
+        sort = args.sort;
     }
     _connectDB(function(err,talk, db) {
         if(err) {
             callback(err, null);
             return;
         }
-       var cursor = talk.collection(collectionName).find(json).limit(limitNumber).skip(skipNumber);
+       var cursor = talk.collection(collectionName).find(json).limit(limitNumber).skip(skipNumber).sort(sort);
        cursor.each(function(err, doc) {
            if(doc != null) {
                result.push(doc)
@@ -95,6 +97,16 @@ exports.updateMany = function(collectionName, json1, json2, callback) {
                 return;
             }
             callback(null, result);
+        })
+    })
+}
+
+init();
+
+function init() {
+    _connectDB(function(err, talk, db) {
+        talk.collection('user').createIndex({'username': 1}, null, function(err, result) {
+            console.log(result);
         })
     })
 }

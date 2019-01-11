@@ -33,4 +33,8 @@ app.get('/setAvatar', router.showSetAvatar);
 
 app.post('/doSetAvatar', router.doSetAvatar);
 
+app.post('/dopost', router.doPost);
+
+app.get('/getAllMessage', router.getAllMesage);
+
 app.listen('3000');

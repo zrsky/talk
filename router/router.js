@@ -4,6 +4,7 @@ var md5 = require('../models/md5.js');
 var path = require('path');
 var fs = require('fs');
 var utils = require('../models/utils.js');
+var moment = require('moment');
 // console.log(md5)
 
 exports.showIndex = function (req, res) {
@@ -15,12 +16,17 @@ exports.showIndex = function (req, res) {
         }
 
         var avatar = result[0] && result[0].avatar || 'default.jpg';
-
-        res.render('index', {
-            login: req.session.login,
-            username: req.session.username,
-            avatar: avatar
-        }); 
+        req.session.avatar = avatar;
+        // db.find('message', {}, function(err, message) {
+        //     console.log(message)
+        //     if(err) throw new Error(err);
+            res.render('index', {
+                login: req.session.login,
+                username: req.session.username,
+                avatar: avatar,
+                // message: message
+            });
+        // }) 
     })
 }
 
@@ -48,7 +54,7 @@ exports.doRegister = function (req, res) {
             db.insertOne('user', {
                 username: username,
                 password: password,
-                avatar: 'default.png'
+                avatar: 'default.jpg'
             }, function (err, result) {
                 if (err) {
                     res.send('-3'); //服务器端错误
@@ -107,7 +113,6 @@ exports.showSetAvatar = function(req, res) {
 
 // 修改头像
 exports.doSetAvatar = function(req, res) {
-    console.log('doSetAvatar')
     var form = new formidable.IncomingForm();
 
     form.uploadDir = path.normalize(__dirname + '/../avatar');
@@ -133,8 +138,20 @@ exports.doSetAvatar = function(req, res) {
                     res.send('修改失败');
                     return;
                 }
+                db.find('message', {username: req.session.username}, function(err, result) {
+                    if(err) {
+                        throw new Error(err);
+                    }
+                    db.updateMany('message',{username: req.session.username},{$set: {avatar: random}}, function(err, data) {
+                      if(err) {
+                          res.send('content头像修改失败');
+                          return;
+                      }
+                  });
+                })
                 
                 var filePath = __dirname + '/../avatar/' + result[0].avatar;
+                if(filePath == 'default.jpg') return;
                 fs.unlink(filePath, (err) => {
                     if (err) throw err;
                     console.log('文件已删除');
@@ -146,4 +163,33 @@ exports.doSetAvatar = function(req, res) {
       })
     });
 
+}
+
+exports.doPost = function(req, res) {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function(err, fields, files) {
+        if(err) {
+            throw new Error(err);
+        }
+        var message = fields.message;
+        var username = req.session.username;
+        var avatar = req.session.avatar;
+        var datetime = moment(new Date().getTime()).format('YYYY-MM-DD HH:mm:ss');
+        var json = {avatar: avatar, datetime: datetime, content: message, username: username};
+        db.insertOne('message', json, function(err, result) {
+            if(err) {
+                res.send({result: -3})
+                return;
+            }
+            res.json(json);
+        })
+    })
+}
+
+exports.getAllMesage = function(req, res) {
+    db.find('message', {}, function(err, message) {
+        console.log(message)
+        if(err) throw new Error(err);
+        res.json({data: message});
+    }) 
 }

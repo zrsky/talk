@@ -37,4 +37,8 @@ app.post('/dopost', router.doPost);
 
 app.get('/getAllMessage', router.getAllMesage);
 
+app.get('/getAllCount', router.getAllCount);
+
+app.get('/getMyMessage', router.getMyMessage);
+
 app.listen('3000');

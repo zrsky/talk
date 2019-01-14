@@ -44,6 +44,16 @@
         .messageRow {
             margin-top: 20px;
         }
+
+        .pagination {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        #loading {
+            min-height: 547px;
+        }
     </style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -93,21 +103,53 @@
         <% } %>
 
     </div>
-        <div class="container">
-            <div class="row" id="messageRow">
+    <% if(login) { %>
+    <div class="container">
+        <% include loading.ejs %>
+        <div class="row" id="messageRow">
+        </div>
+        <ul class="pagination">
 
-            </div>
-        </div> <!-- /container -->
+        </ul>
+    </div> <!-- /container -->
     
+
+    <script>
+        $.get('/getAllCount', {}, function(result) {
+            let pageAmount = Math.ceil(result.data / 10);
+            let fragment = document.createDocumentFragment();
+            for(var i = 1; i <= pageAmount; i++) {
+                var li = document.createElement('li');
+                var a = document.createElement('a');
+                a.setAttribute('href', 'javascript:void(0);');
+                a.innerHTML = i;
+                li.appendChild(a);
+                console.log(li)
+                fragment.appendChild(li);
+            }
+            $('.pagination').get(0).appendChild(fragment);
+            $('.pagination li:first').addClass('active');
+            $('.pagination li').click(function() {
+                var index = $(this).index() + 1;
+                $('#loading').css({"display": 'block'});
+                getPage(index);
+                $(this).addClass('active').siblings().removeClass('active');
+
+            })
+            
+        })
+    </script>
+    <% } %>
+
     <script src="/js/jquery-1.11.3.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/underscore-noflect.js"></script>
     <script type="text/template" id="model">
-                <div class="col-md-4  messageRow">
+        <div class="col-md-4  messageRow" id="messageChild">
                     <div class="row">
                         <img src="{{= avatar }}" class="mAvatar" alt="">
                         <p style="display: inline-block;">
-                            {{= username }}
+                            {{= username }}说：
                         </p>
                         <div class="content-wrapper">
                             <p>
@@ -123,8 +165,11 @@
     <script>
         //得到模板函数
         var compiled = _.template($("#model").html());
-
-        $.get('/getAllMessage', {}, function (result) {
+        getPage(1);
+        function getPage(page) {
+            $('#messageRow').empty();
+            $.get('/getAllMessage?page=' + page, {}, function (result) {
+            $('#loading').css({"display": 'none'});
             result.data.forEach((item, i) => {
                 //组装模板
                 var htmlstring = compiled(item);
@@ -132,6 +177,7 @@
                 $("#messageRow").append($(htmlstring));
             });
         })
+        }
 
         $('#post').on('click', function () {
             $.post('/dopost', {
@@ -147,7 +193,7 @@
                                 <div class="row">
                                     <img src="${result.avatar}" class="mAvatar" alt="">
                                      <p style="display: inline-block;">
-                                        ${result.username}
+                                        ${result.username}说：
                                     </p>
                                     <div class="content-wrapper">
                                         <p>
@@ -159,7 +205,7 @@
                                     </div
                                 </div>
                             </div>`;
-                $('#messageRow').append(str);
+                $('#messageRow').prepend(str);
             })
         })
     </script>

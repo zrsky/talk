@@ -42,8 +42,8 @@ exports.find = function(collectionName, json, C, D) {
     }else if(length === 4) {
         args = C;
         callback = D;
-        limitNumber = args.pageSize;
-        skipNumber = args.pageSize * (args.pageNo - 1);
+        limitNumber = args.pageSize || 0;
+        skipNumber = args.pageSize * (args.pageNo - 1) || 0;
         sort = args.sort;
     }
     _connectDB(function(err,talk, db) {
@@ -78,6 +78,7 @@ exports.deleteMany = function(collectionName, json, callback) {
                 return;
             }
             callback(null, result);
+            db.close();
         })
     })
 }
@@ -97,6 +98,7 @@ exports.updateMany = function(collectionName, json1, json2, callback) {
                 return;
             }
             callback(null, result);
+            db.close();
         })
     })
 }
@@ -108,5 +110,15 @@ function init() {
         talk.collection('user').createIndex({'username': 1}, null, function(err, result) {
             console.log(result);
         })
+    })
+}
+
+//得到总数量
+exports.getAllCount = function (collectionName,callback) {
+    _connectDB(function (err, db) {
+        db.collection(collectionName).count({}).then(function(count) {
+            callback(null, count);
+            db.close();
+        });
     })
 }

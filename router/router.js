@@ -24,6 +24,7 @@ exports.showIndex = function (req, res) {
                 login: req.session.login,
                 username: req.session.username,
                 avatar: avatar,
+                active: 'index'
                 // message: message
             });
         // }) 
@@ -187,9 +188,32 @@ exports.doPost = function(req, res) {
 }
 
 exports.getAllMesage = function(req, res) {
-    db.find('message', {}, function(err, message) {
+    var pageNo = req.query.page;
+    db.find('message', {}, {"pageNo": pageNo, "pageSize": 10, "sort": {datetime: -1}}, function(err, message) {
         console.log(message)
         if(err) throw new Error(err);
         res.json({data: message});
     }) 
+}
+
+exports.getAllCount = function(req, res) {
+    db.getAllCount('message', function(err, count) {
+        if(err) throw new Error(err);
+        res.json({data: count});
+    }) 
+}
+
+exports.getMyMessage = function(req, res) {
+    let page = req.query.page;
+    db.find('message', {username: req.session.username}, {"pageNo": page, "pageSize": 10, "sort": {datetime: 1}}, function(err, result) {
+        if(err) throw new Error(err);
+
+        res.render('myMessage', {
+            login: req.session.login,
+            username: req.session.username,
+            myMessage: result,
+            avatar: result.avatar,
+            active: 'myMessage'
+        });
+    })
 }
